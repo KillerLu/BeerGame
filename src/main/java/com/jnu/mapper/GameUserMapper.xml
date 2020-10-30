@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jnu.dao.GameUserDao" >
+
+    <select id="listUnEndGameUserByUserId" resultType="com.jnu.view.GameUser">
+        select gu.* from game_user gu
+        join game g
+        on gu.game_id=g.id and g.deleted=0
+        where g.status not in(20,30) and gu.deleted=0 and gu.user_id=#{userId}
+    </select>
+</mapper>

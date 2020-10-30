@@ -1,0 +1,7 @@
+.idea/
+generated-files/
+*.iml
+target/
+merge-files/
+.DS_Store
+logs/
