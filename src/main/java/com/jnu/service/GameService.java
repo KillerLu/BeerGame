@@ -17,6 +17,7 @@ import com.jnu.util.SpringContextUtil;
 import com.jnu.util.TokenUtil;
 import com.jnu.view.*;
 import com.jnu.vo.GameInformationVo;
+import com.jnu.vo.GameStatisticsVo;
 import com.jnu.vo.GameVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -56,6 +57,9 @@ public class GameService {
 
     @Autowired
     private RoomNumUtil roomNumUtil;
+
+    @Autowired
+    private GameStatisticsDao gameStatisticsDao;
 
     public GameContext getGameContext(Long gameId) {
         GameContext context=new GameContext();
@@ -183,6 +187,8 @@ public class GameService {
                 addOrUpdateGame(game);
                 //同时要回收房间号
                 roomNumUtil.reUse(game.getRoomNo());
+                //保存游戏统计信息
+                saveGameStatistics(game.getId());
                 return;
             }
             //否则要新增加一条游戏轮次记录
@@ -199,6 +205,38 @@ public class GameService {
         if (!CollectionUtils.isEmpty(gameUsers)) {
             for (GameUser gameUser : gameUsers) {
                 getGameProcessHandler(gameUser).initGameInformation(currentGameRound, newRound, gameUser);
+            }
+        }
+    }
+
+    private void saveGameStatistics(Long gameId) {
+        //查询游戏用户
+        List<GameUser> gameUsers = listGameUserByGameId(gameId, false);
+        //查询该游戏所有的游戏信息
+        List<GameInformation> gameInformations = listGameInformation(gameId, null);
+        Map<Long, List<GameInformation>> gameInformationMap = gameInformations.stream().collect(Collectors.groupingBy(GameInformation::getUserId));
+        //为每个用户保存统计信息
+        if (!CollectionUtils.isEmpty(gameUsers)) {
+            for (GameUser gameUser : gameUsers) {
+                GameStatistics statistics=new GameStatistics();
+                statistics.setGameId(gameId);
+                statistics.setUserId(gameUser.getUserId());
+                statistics.setUserRole(gameUser.getUserRole());
+                Integer inventoryCost=0;
+                Integer shortageCost=0;
+                List<GameInformation> userGameInformations = gameInformationMap.get(gameUser.getUserId());
+                if (!CollectionUtils.isEmpty(userGameInformations)) {
+                    for (GameInformation userGameInformation : userGameInformations) {
+                        //库存成本
+                        inventoryCost=inventoryCost+userGameInformation.getStockNum();
+                        //缺货成本
+                        shortageCost=inventoryCost+3*userGameInformation.getShortSupplyNum();
+                    }
+                }
+                statistics.setInventoryCost(inventoryCost);
+                statistics.setShortageCost(shortageCost);
+                statistics.setTotalCost(inventoryCost+shortageCost);
+                gameStatisticsDao.insert(statistics);
             }
         }
     }
@@ -444,5 +482,35 @@ public class GameService {
         listAndCount.setList(games);
         listAndCount.setCount(count);
         return listAndCount;
+    }
+
+
+    public List<GameInformation> listGameInformation(Long gameId, Long userId) {
+        return gameInformationDao.listGameInformation(gameId, userId);
+    }
+
+
+    /**
+     * 获取某用户某局游戏的统计信息
+     * @param gameId
+     * @return
+     */
+    public GameStatisticsVo getGameStatistics(Long gameId) {
+        //查询该游戏用户
+        GameUser gameUser=getCurrentGameUser(gameId);
+        if (gameUser == null) {
+            return null;
+        }
+        GameStatistics statistics = gameStatisticsDao.selectOne(new QueryWrapper<GameStatistics>().eq("game_id", gameId).eq("user_id", TokenUtil.getCurrentUserId()));
+        if (statistics == null) {
+            return null;
+        }
+        GameStatisticsVo vo = CloneUtil.clone(statistics, GameStatisticsVo.class);
+        //查询有多少成本大于等于他的
+        Integer highCostPlayer = gameStatisticsDao.selectCount(new QueryWrapper<GameStatistics>().ne("game_id", gameId).eq("user_role", gameUser.getUserRole()).ge("total_cost", statistics.getTotalCost()));
+        //查询成本小于他的  排名比他高
+        Integer lowerCostPlayer = gameStatisticsDao.selectCount(new QueryWrapper<GameStatistics>().ne("game_id", gameId).eq("user_role", gameUser.getUserRole()).lt("total_cost", statistics.getTotalCost()));
+        vo.setRank((lowerCostPlayer+1)*1.0/(lowerCostPlayer+highCostPlayer+1));
+        return vo;
     }
 }

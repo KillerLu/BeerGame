@@ -2,4 +2,15 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.jnu.dao.GameInformationDao" >
 
+    <select id="listGameInformation" resultType="com.jnu.view.GameInformation">
+        select gf.* from game_information gf
+        join game_round gr
+        on gf.round_id=gr.id and gr.deleted=0
+        where gf.deleted=0 and gr.game_id=#{gameId}
+        <if test="userId != null">
+            AND gf.user_id=#{userId}
+        </if>
+    </select>
+
+
 </mapper>

@@ -1,12 +1,16 @@
 package com.jnu.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.jnu.common.ListAndCount;
 import com.jnu.common.ResponseBuilder;
 import com.jnu.service.GameService;
 import com.jnu.util.CloneUtil;
+import com.jnu.util.TokenUtil;
 import com.jnu.view.Game;
+import com.jnu.view.GameInformation;
 import com.jnu.view.GameUser;
 import com.jnu.vo.GameInformationVo;
+import com.jnu.vo.GameStatisticsVo;
 import com.jnu.vo.GameUserVo;
 import com.jnu.vo.GameVo;
 import io.swagger.annotations.ApiImplicitParam;
@@ -49,7 +53,7 @@ public class GameController {
     @ApiImplicitParams({
             @ApiImplicitParam(name = "roomNo", value = "房间编号",  dataType = "string", paramType = "query")
     })
-    public Object joinGame(String roomNo) {
+    public Object joinGame(@RequestParam(value = "roomNo") String roomNo) {
         GameUser gameUser=gameService.joinGame(roomNo);
         GameUserVo vo = CloneUtil.clone(gameUser, GameUserVo.class);
         vo.setRoomNo(roomNo);
@@ -62,7 +66,8 @@ public class GameController {
             @ApiImplicitParam(name = "gameUserId", value = "游戏用户id",  dataType = "long", paramType = "query"),
             @ApiImplicitParam(name = "userRole", value = "玩家角色 RETAILER:零售商 WHOLESALER:批发商 RESELLER:分销商 MANUFACTURER:厂商 OB:观看者",  dataType = "long", paramType = "query")
     })
-    public Object chooseGameRole(Long gameUserId, String userRole) {
+    public Object chooseGameRole(@RequestParam(value = "gameUserId") Long gameUserId,
+                                 @RequestParam(value = "userRole") String userRole) {
         gameService.chooseGameRole(gameUserId, userRole);
         return new ResponseBuilder().success().build();
     }
@@ -72,7 +77,7 @@ public class GameController {
     @ApiImplicitParams({
             @ApiImplicitParam(name = "gameId", value = "游戏id",  dataType = "long", paramType = "query")
     })
-    public Object startGame(Long gameId) {
+    public Object startGame(@RequestParam(value = "gameId") Long gameId) {
         gameService.startGame(gameId);
         return new ResponseBuilder().success().build();
     }
@@ -82,7 +87,7 @@ public class GameController {
     @ApiImplicitParams({
             @ApiImplicitParam(name = "id", value = "游戏id",  dataType = "long", paramType = "query")
     })
-    public Object getGameDetail(Long id) {
+    public Object getGameDetail(@RequestParam(value = "id") Long id) {
         GameVo vo = gameService.getGameDetail(id);
         return new ResponseBuilder().success().data(vo).build();
     }
@@ -93,7 +98,7 @@ public class GameController {
     @ApiImplicitParams({
             @ApiImplicitParam(name = "gameId", value = "游戏id",  dataType = "long", paramType = "query")
     })
-    public Object getUserGameInformation(Long gameId) {
+    public Object getUserGameInformation(@RequestParam(value = "gameId") Long gameId) {
         GameInformationVo vo = gameService.getUserGameInformation(gameId);
         return new ResponseBuilder().success().data(vo).build();
     }
@@ -103,7 +108,7 @@ public class GameController {
     @ApiImplicitParams({
             @ApiImplicitParam(name = "gameId", value = "游戏id",  dataType = "long", paramType = "query")
     })
-    public Object sendGoods(Long gameId) {
+    public Object sendGoods(@RequestParam(value = "gameId") Long gameId) {
         gameService.sendGoods(gameId);
         return new ResponseBuilder().success().build();
     }
@@ -115,7 +120,8 @@ public class GameController {
             @ApiImplicitParam(name = "gameId", value = "游戏id",  dataType = "long", paramType = "query"),
             @ApiImplicitParam(name = "orderNum", value = "订货数",  dataType = "int", paramType = "query")
     })
-    public Object orderGoods(Long gameId,Integer orderNum) {
+    public Object orderGoods(@RequestParam(value = "gameId")Long gameId,
+                             @RequestParam(value = "orderNum")Integer orderNum) {
         gameService.orderGoods(gameId,orderNum);
         return new ResponseBuilder().success().build();
     }
@@ -125,7 +131,7 @@ public class GameController {
     @ApiImplicitParams({
             @ApiImplicitParam(name = "gameId", value = "游戏id",  dataType = "long", paramType = "query")
     })
-    public Object leaveRoom(Long gameId) {
+    public Object leaveRoom(@RequestParam(value = "gameId") Long gameId) {
         gameService.leaveRoom(gameId);
         return new ResponseBuilder().success().build();
     }
@@ -135,9 +141,20 @@ public class GameController {
     @ApiImplicitParams({
             @ApiImplicitParam(name = "gameId", value = "游戏id",  dataType = "long", paramType = "query")
     })
-    public Object terminateGame(Long gameId) {
+    public Object terminateGame(@RequestParam(value = "gameId") Long gameId) {
         gameService.terminateGame(gameId);
         return new ResponseBuilder().success().build();
+    }
+
+    @RequestMapping(value = "/listGameUsers", method = RequestMethod.GET)
+    @ApiOperation(value = "查询某游戏房间里的所有用户", httpMethod = "GET", notes = "查询某游戏房间里的所有用户",response = GameUserVo.class)
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "gameId", value = "游戏id", dataType = "long", paramType = "query")
+    })
+    public Object listGameUsers(@RequestParam(value = "gameId") Long gameId) {
+        List<GameUser> gameUsers = gameService.listGameUserByGameId(gameId, true);
+        List<GameUserVo> vos = CloneUtil.batchClone(gameUsers, GameUserVo.class);
+        return new ResponseBuilder().success().data(vos).build();
     }
 
 
@@ -161,4 +178,27 @@ public class GameController {
         return new ResponseBuilder().success().data(vos).add("total", listAndCount.getCount()).build();
     }
 
+
+    @RequestMapping(value = "/listGameInformations", method = RequestMethod.GET)
+    @ApiOperation(value = "查询游戏运营报表", httpMethod = "GET", notes = "查询游戏运营报表",response = GameVo.class)
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "gameId", value = "游戏id", dataType = "long", paramType = "query"),
+            @ApiImplicitParam(name = "listAll", value = "是否查询全部 true:查询全部 false:只查询当前用户角色的,默认为false", dataType = "long", paramType = "query"),
+    })
+    public Object listGameInformations(@RequestParam(value = "gameId") Long gameId,
+                                       @RequestParam(value = "listAll",defaultValue = "false") Boolean listAll) {
+        List<GameInformation> gameInformations = gameService.listGameInformation(gameId,listAll?null:TokenUtil.getCurrentUserId());
+        List<GameInformationVo> vos = CloneUtil.batchClone(gameInformations, GameInformationVo.class);
+        return new ResponseBuilder().success().data(vos).build();
+    }
+
+    @RequestMapping(value = "/getGameStatistics", method = RequestMethod.GET)
+    @ApiOperation(value = "查询游戏统计信息", httpMethod = "GET", notes = "查询游戏统计信息",response = GameStatisticsVo.class)
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "gameId", value = "游戏id", dataType = "long", paramType = "query")
+    })
+    public Object getGameStatistics(@RequestParam(value = "gameId") Long gameId) {
+        GameStatisticsVo vo = gameService.getGameStatistics(gameId);
+        return new ResponseBuilder().success().data(vo).build();
+    }
 }
