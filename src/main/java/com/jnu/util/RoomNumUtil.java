@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.jnu.constant.GameConstant;
 import com.jnu.exception.ServiceException;
 import com.jnu.service.GameService;
+import com.jnu.service.UserService;
 import com.jnu.view.Game;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -30,15 +33,22 @@ public class RoomNumUtil {
 
     private Set<String> rooms = new HashSet<String>();
 
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
+
     //初始化启动所有的Job
     @PostConstruct
     public void initialize() {
         //查询所有进行中的游戏
-        List<Game> games = gameService.listGame(new QueryWrapper<Game>().ne("status", GameConstant.FINISH));
-        if (!CollectionUtils.isEmpty(games)) {
-            for (Game game : games) {
-                rooms.add(game.getRoomNo());
+        try {
+            List<Game> games = gameService.listGame(new QueryWrapper<Game>().ne("status", GameConstant.FINISH));
+            if (!CollectionUtils.isEmpty(games)) {
+                for (Game game : games) {
+                    rooms.add(game.getRoomNo());
+                }
             }
+        } catch (Exception e) {
+            logger.error("数据库没有初始化" );
         }
     }
 

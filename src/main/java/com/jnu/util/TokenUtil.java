@@ -39,10 +39,13 @@ public class TokenUtil {
                     .parseClaimsJws(token)
                     .getBody();
             Long userId = Long.parseLong(claims.get("userId").toString());
-            String name = claims.get("name").toString();
+
             User user = new User();
             user.setId(userId);
-            user.setName(name);
+            if (claims.containsKey("name")) {
+                String name = claims.get("name").toString();
+                user.setName(name);
+            }
             return user;
         } catch (Exception e) {
             e.printStackTrace();

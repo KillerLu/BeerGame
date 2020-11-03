@@ -1,11 +1,11 @@
 server:
-  port: 9000
+  port: 8080
 #数据源
 spring:
  datasource:
-   url: jdbc:mysql://localhost:3306/beer_game?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=false
-   username: killer
-   password: leekawah123
+   url: jdbc:mysql://39.98.254.90:3306/beer_game?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=false
+   username: beer_game
+   password: P@ssw0rd#
    driver-class-name: com.mysql.jdbc.Driver
  druid:
   # 初始化时建立物理连接的个数。初始化发生在显示调用init方法，或者第一次getConnection时
