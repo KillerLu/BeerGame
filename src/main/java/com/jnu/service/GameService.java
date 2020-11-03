@@ -513,4 +513,8 @@ public class GameService {
         vo.setRank((lowerCostPlayer+1)*1.0/(lowerCostPlayer+highCostPlayer+1));
         return vo;
     }
+
+    public Game getUserCurrentGame(Long userId) {
+        return gameDao.getUserCurrentGame(userId);
+    }
 }

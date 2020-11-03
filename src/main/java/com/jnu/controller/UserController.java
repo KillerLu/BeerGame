@@ -1,6 +1,7 @@
 package com.jnu.controller;
 
 import com.jnu.common.ResponseBuilder;
+import com.jnu.service.GameService;
 import com.jnu.service.UserService;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 /**
  * @author ：Killer
@@ -32,8 +35,7 @@ public class UserController {
     })
     public Object login(String code)
     {
-        String token=userService.login(code);
-        System.out.println(token);
-        return new ResponseBuilder().success().add("token", token).build();
+        Map retMap=userService.login(code);
+        return new ResponseBuilder().success().add("token", retMap.get("token")).add("roomNo", retMap.get("roomNo")).build();
     }
 }

@@ -32,4 +32,11 @@ public interface GameDao extends BaseMapper<Game> {
                                          @Param("length")long length);
 
     long countUserHistoryGame(@Param("userId") Long userId);
+
+    /**
+     * 获取当前用户所在的未结束的游戏
+     * @param userId
+     * @return
+     */
+    Game getUserCurrentGame(@Param("userId") Long userId);
 }
