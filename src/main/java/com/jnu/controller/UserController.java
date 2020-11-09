@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
@@ -31,11 +32,14 @@ public class UserController {
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     @ApiOperation(value = "登录", httpMethod = "POST", notes = "登录")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "code", value = "微信code",  dataType = "string", paramType = "query")
+            @ApiImplicitParam(name = "code", value = "微信code",  dataType = "string", paramType = "query"),
+            @ApiImplicitParam(name = "name", value = "微信名称",  dataType = "string", paramType = "query")
     })
-    public Object login(String code)
+    public Object login(@RequestParam("code") String code,
+                        @RequestParam("name") String name)
     {
-        Map retMap=userService.login(code);
-        return new ResponseBuilder().success().add("token", retMap.get("token")).add("roomNo", retMap.get("roomNo")).build();
+        Map retMap=userService.login(code,name);
+        return new ResponseBuilder().success().add("token", retMap.get("token")).add("game", retMap.get("game"))
+                .add("gameUser", retMap.get("gameUser")).build();
     }
 }

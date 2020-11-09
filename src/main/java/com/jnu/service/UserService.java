@@ -7,12 +7,15 @@ import com.jnu.exception.ServiceException;
 import com.jnu.util.HttpUtil;
 import com.jnu.util.TokenUtil;
 import com.jnu.view.Game;
+import com.jnu.view.GameUser;
 import com.jnu.view.User;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +50,8 @@ public class UserService {
     @Autowired
     private UserDao userDao;
 
-    public Map login(String code) {
+    @Transactional
+    public Map login(String code,String name) {
         String openId = getUserOpenId(code);
         //查询该openId对应的用户是否存在  这里必须是确保唯一
         User user = userDao.selectOne(new QueryWrapper<User>().eq("open_id", openId));
@@ -56,15 +60,23 @@ public class UserService {
             user=new User();
             user.setOpenId(openId);
             userDao.insert(user);
+            user.setName(StringUtils.isBlank(name)?"游戏用户"+user.getId():user.getName());
+            userDao.updateById(user);
         }
-
+        if (StringUtils.isNotBlank(name)&&!StringUtils.equals(name, user.getName())) {
+            user.setName(name);
+            userDao.updateById(user);
+        }
         //执行login操作
         String token=doLogin(user);
         //查询该用户所在的游戏
         Game game=gameService.getUserCurrentGame(user.getId());
+        //查询游戏角色
+        GameUser gameUser = gameService.getCurrentGameUser(game.getId());
         Map<String,Object> retMap=new HashMap<String,Object>();
         retMap.put("token", token);
-        retMap.put("roomNo", game.getRoomNo());
+        retMap.put("game", game);
+        retMap.put("gameUser", gameUser);
         return retMap;
     }
 

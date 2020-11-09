@@ -22,9 +22,9 @@ public interface GameDao extends BaseMapper<Game> {
 
     /**
      * 查询用户游戏记录(只查询已完成的)
-     * @param currentUserId
-     * @param page
-     * @param pageLength
+     * @param userId
+     * @param offset
+     * @param length
      * @return
      */
     public List<Game> getUserHistoryGame(@Param("userId") Long userId,

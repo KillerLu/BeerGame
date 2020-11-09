@@ -28,6 +28,17 @@ public class GameUserVo {
     @ApiModelProperty("房间号")
     private String roomNo;
 
+    @ApiModelProperty("游戏用户名称")
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public Long getId() {
         return id;
     }
